@@ -11,7 +11,7 @@ RAISE_WORTH_SELLING = 200.0 / AMOUNT_TO_INVEST_PER_PURCHASE # first value is rai
 MINIMUM_CASH = 20000
 UPDATE_MIN_DELAY = 30
 
-destructive = False # if True, will actually perform buy & sell operations
+destructive = True # if True, will actually perform buy & sell operations
 
 # helper functions
 def read_file(path):
@@ -222,8 +222,7 @@ while True:
     try:
         hour = datetime.datetime.now().hour
         
-    #    if hour >= 10 and hour <= 15: # if stock market open
-        if True:
+        if hour >= 10 and hour <= 15: # if stock market open
             print('market is open, running algorithm')
             
             # open driver
