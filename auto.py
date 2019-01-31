@@ -13,6 +13,10 @@ UPDATE_MIN_DELAY = 30
 
 destructive = True # if True, will actually perform buy & sell operations
 
+f = open("runhistory.txt", "a")
+f.write(str(datetime.datetime.now()) + '\n')
+f.close()
+
 # helper functions
 def read_file(path):
     file = open(path)
