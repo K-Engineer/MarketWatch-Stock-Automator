@@ -4,6 +4,9 @@ import requests
 import datetime
 import traceback
 from preferences import *
+#from selenium.webdriver.common.by import By
+#from selenium.webdriver.support.ui import WebDriverWait
+#from selenium.webdriver.support import expected_conditions as EC
 
 if use_virtual_display:
     from pyvirtualdisplay import Display
@@ -23,20 +26,20 @@ def login():
     by_name('username').send_keys(username)
     by_name('password').send_keys(password)
     by_class('basic-login-submit').click()
-    sleep(3)
+    sleep(10) # need to wait to make sure login properly works, 10 might be excessive
 
 def buy_stock(name, amount):
     print('buying ' + str(amount) + '$ worth of '+ name)
     driver.get(home)
-    sleep(5)
+    #sleep(5)
     
     # search interfeace
     by_class('j-miniTrade').send_keys(name)
-    sleep(5)
+    #sleep(5)
     price = float(by_class('t-price').text)
     print('the price of ' + name + ' is:' + str(price))
     by_class('t-trade').click()
-    sleep(15)
+    #sleep(15)
 
     # buy interface
     shares = int(amount / price)
@@ -62,7 +65,7 @@ def get_stock_info(name):
 def get_overview_stats():
     print('getting overview stats about my profile')
     driver.get(home)
-    sleep(5)
+    #sleep(5)
     
     info = {}
     
@@ -184,14 +187,14 @@ def auto_sell():
 def sell(name, shares):
     print('selling ' + str(shares) + ' of ' + name)
     driver.get(home + 'portfolio')
-    sleep(3)
+    #sleep(3)
     
     # search interfeace
     by_class('j-miniTrade').send_keys(name)
-    sleep(3)
+    #sleep(3)
     price = float(by_class('t-price').text)
     by_class('t-trade').click()
-    sleep(2)
+    #sleep(2)
     
     # click sell
     header = by_class('lightbox__header')
@@ -229,6 +232,14 @@ def is_market_open():
 
     return 6.5 <= hour + (minute / 60.0) and hour <= 12.5
 
+#def wait_for(by, name):
+#    try:
+#        element = WebDriverWait(driver, 100).until(EC.presence_of_element_located((by, name)))
+#    finally:
+#        print('ERROR: FAILED TO FIND ' + str(by) + ' ' + name)
+#
+#    return element
+
 while True:
     f = open("runhistory.txt", "w")
     f.write(str(datetime.datetime.now()) + '\n')
@@ -241,11 +252,13 @@ while True:
             if use_virtual_display:
                 display.start()
             
-            # shortcut bindings
+            # setup driver
             if driver_path != '':
                 driver = driver_type(driver_path)
             else:
                 driver = driver_type()
+            
+            driver.implicitly_wait(100)
             
             by_name = driver.find_element_by_name
             by_class = driver.find_element_by_class_name
