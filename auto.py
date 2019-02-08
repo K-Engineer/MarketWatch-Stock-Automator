@@ -4,13 +4,11 @@ import requests
 import datetime
 import traceback
 from preferences import *
-#from selenium.webdriver.common.by import By
-#from selenium.webdriver.support.ui import WebDriverWait
-#from selenium.webdriver.support import expected_conditions as EC
 
 if use_virtual_display:
     from pyvirtualdisplay import Display
     display = Display(visible=0, size=(1000, 800))
+    display.start()
 
 # helper functions
 def read_file(path):
@@ -212,33 +210,21 @@ def sell(name, shares):
 
 def safe_exit():
     try:
-        driver
-    except NameError:
-        pass
-    else:
         driver.close()
         driver.quit()
+    except Exception:
+        pass
         
     try:
-        display
-    except NameError:
-        pass
-    else:
         display.stop()
+    except Exception:
+        pass
 
 def is_market_open():
     now = datetime.datetime.now()
     hour, minute = now.hour, now.minute
 
     return 6.5 <= hour + (minute / 60.0) and hour <= 12.5
-
-#def wait_for(by, name):
-#    try:
-#        element = WebDriverWait(driver, 100).until(EC.presence_of_element_located((by, name)))
-#    finally:
-#        print('ERROR: FAILED TO FIND ' + str(by) + ' ' + name)
-#
-#    return element
 
 while True:
     f = open("runhistory.txt", "w")
@@ -248,9 +234,6 @@ while True:
     try:
         if is_market_open() or ignore_if_market_open: # if stock market open
             print('market is open or state ignored by preference, running algorithm')
-            
-            if use_virtual_display:
-                display.start()
             
             # setup driver
             if driver_path != '':
