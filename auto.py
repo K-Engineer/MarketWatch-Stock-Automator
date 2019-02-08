@@ -3,6 +3,7 @@ from time import sleep
 import json
 import requests
 import datetime
+import traceback
 
 # constants
 DROP_WORTH_BUYING = -.05
@@ -12,10 +13,6 @@ MINIMUM_CASH = 20000
 UPDATE_MIN_DELAY = 30
 
 destructive = True # if True, will actually perform buy & sell operations
-
-f = open("runhistory.txt", "a")
-f.write(str(datetime.datetime.now()) + '\n')
-f.close()
 
 # helper functions
 def read_file(path):
@@ -96,9 +93,6 @@ def get_sp_stock_data():
     i = 1
     f = open('stock_list.txt')
     for line in f:
-#        if i > 30:
-#            break
-
         if i % 10 == 0:
             print(str(i/500.0*100) + '% complete getting stock info')
         i += 1
@@ -223,14 +217,24 @@ def sell(name, shares):
         by_class('j-submit').click()
 
 while True:
+    f = open("runhistory.txt", "w")
+    f.write(str(datetime.datetime.now()) + '\n')
+    f.close()
+
     try:
-        hour = datetime.datetime.now().hour
-        
-        if hour >= 10 and hour <= 15: # if stock market open
+        now = datetime.datetime.now()
+        hour = now.hour
+        minute = now.minute
+
+	if True:
+#        if 9.5 <= hour + (minute / 60.0) and hour <= 15: # if stock market open
             print('market is open, running algorithm')
-            
+            from pyvirtualdisplay import Display
+
+            display = Display(visible=0, size=(800, 600))
+            display.start()
             # open driver
-            driver = webdriver.Chrome('./chromedriver')
+            driver = webdriver.Firefox()
             
             # shortcut bindings
             by_name = driver.find_element_by_name
@@ -243,11 +247,20 @@ while True:
             auto_sell()
 
             driver.close()
+            driver.quit()
+            display.stop()
         else:
             print('market is closed, algorithm will NOT run')
 
         print('sleeping for ' + str(UPDATE_MIN_DELAY) + ' minutes')
         sleep(UPDATE_MIN_DELAY * 60) # sleep 30 minutes
 
-    except:
+    except Exception as e:
+        traceback.print_exc()
+        
+	f = open("errors.txt", "a")
+	f.write(str(datetime.datetime.now()) + '\n' + str(e) + '\n')
+	f.close()
+
+	sleep(5)
         pass
