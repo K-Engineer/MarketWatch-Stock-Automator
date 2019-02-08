@@ -1,18 +1,13 @@
-from selenium import webdriver
 from time import sleep
 import json
 import requests
 import datetime
 import traceback
+from preferences import *
 
-# constants
-DROP_WORTH_BUYING = -.05
-AMOUNT_TO_INVEST_PER_PURCHASE = 7500
-RAISE_WORTH_SELLING = 200.0 / AMOUNT_TO_INVEST_PER_PURCHASE # first value is raise in $ when to sell
-MINIMUM_CASH = 20000
-UPDATE_MIN_DELAY = 30
-
-destructive = True # if True, will actually perform buy & sell operations
+if use_virtual_display:
+    from pyvirtualdisplay import Display
+    display = Display(visible=0, size=(800, 600))
 
 # helper functions
 def read_file(path):
@@ -21,15 +16,12 @@ def read_file(path):
     file.close()
     return text
 
-home = read_file('gamehomepage.txt')
-loginpage = read_file('loginpage.txt')
-
 def login():
     print('logging in')
     driver.get(loginpage)
 
-    by_name('username').send_keys(read_file('username.txt'))
-    by_name('password').send_keys(read_file('password.txt'))
+    by_name('username').send_keys(username)
+    by_name('password').send_keys(password)
     by_class('basic-login-submit').click()
     sleep(3)
 
@@ -44,7 +36,7 @@ def buy_stock(name, amount):
     price = float(by_class('t-price').text)
     print('the price of ' + name + ' is:' + str(price))
     by_class('t-trade').click()
-    sleep(5)
+    sleep(15)
 
     # buy interface
     shares = int(amount / price)
@@ -62,7 +54,6 @@ def clean(text, num=False):
         return float(result)
     else:
         return result
-
 
 def get_stock_info(name):
     print('getting stock info for ' + name)
@@ -216,39 +207,57 @@ def sell(name, shares):
     if destructive:
         by_class('j-submit').click()
 
+def safe_exit():
+    try:
+        driver
+    except NameError:
+        pass
+    else:
+        driver.close()
+        driver.quit()
+        
+    try:
+        display
+    except NameError:
+        pass
+    else:
+        display.stop()
+
+def is_market_open():
+    now = datetime.datetime.now()
+    hour, minute = now.hour, now.minute
+
+    return 6.5 <= hour + (minute / 60.0) and hour <= 12.5
+
 while True:
     f = open("runhistory.txt", "w")
     f.write(str(datetime.datetime.now()) + '\n')
     f.close()
 
     try:
-        now = datetime.datetime.now()
-        hour = now.hour
-        minute = now.minute
-
-	if True:
-#        if 9.5 <= hour + (minute / 60.0) and hour <= 15: # if stock market open
-            print('market is open, running algorithm')
-            from pyvirtualdisplay import Display
-
-            display = Display(visible=0, size=(800, 600))
-            display.start()
-            # open driver
-            driver = webdriver.Firefox()
+        if is_market_open() or ignore_if_market_open: # if stock market open
+            print('market is open or state ignored by preference, running algorithm')
+            
+            if use_virtual_display:
+                display.start()
             
             # shortcut bindings
+            if driver_path != '':
+                driver = driver_type(driver_path)
+            else:
+                driver = driver_type()
+            
             by_name = driver.find_element_by_name
             by_class = driver.find_element_by_class_name
             multiple_by_class = driver.find_elements_by_class_name
             
             # MAIN OPERATIONS
             login()
-            auto_buy()
-            auto_sell()
+            buy_stock('AAPL', 10000)
+#            auto_buy()
+#            auto_sell()
 
-            driver.close()
-            driver.quit()
-            display.stop()
+            safe_exit()
         else:
             print('market is closed, algorithm will NOT run')
 
@@ -256,11 +265,14 @@ while True:
         sleep(UPDATE_MIN_DELAY * 60) # sleep 30 minutes
 
     except Exception as e:
+        print("EXCEPTION!!!")
         traceback.print_exc()
         
-	f = open("errors.txt", "a")
-	f.write(str(datetime.datetime.now()) + '\n' + str(e) + '\n')
-	f.close()
+        f = open("errors.txt", "a")
+        f.write(str(datetime.datetime.now()) + '\n' + str(e) + '\n')
+        f.close()
+        
+        safe_exit()
+        sleep(5)
 
-	sleep(5)
         pass
