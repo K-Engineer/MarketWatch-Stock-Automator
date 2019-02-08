@@ -10,7 +10,7 @@ from preferences import *
 
 if use_virtual_display:
     from pyvirtualdisplay import Display
-    display = Display(visible=0, size=(800, 600))
+    display = Display(visible=0, size=(1000, 800))
 
 # helper functions
 def read_file(path):
@@ -31,15 +31,15 @@ def login():
 def buy_stock(name, amount):
     print('buying ' + str(amount) + '$ worth of '+ name)
     driver.get(home)
-    #sleep(5)
+    sleep(5)
     
     # search interfeace
     by_class('j-miniTrade').send_keys(name)
-    #sleep(5)
+    sleep(5)
     price = float(by_class('t-price').text)
     print('the price of ' + name + ' is:' + str(price))
     by_class('t-trade').click()
-    #sleep(15)
+    sleep(15)
 
     # buy interface
     shares = int(amount / price)
@@ -65,7 +65,7 @@ def get_stock_info(name):
 def get_overview_stats():
     print('getting overview stats about my profile')
     driver.get(home)
-    #sleep(5)
+    sleep(5)
     
     info = {}
     
@@ -187,14 +187,14 @@ def auto_sell():
 def sell(name, shares):
     print('selling ' + str(shares) + ' of ' + name)
     driver.get(home + 'portfolio')
-    #sleep(3)
+    sleep(3)
     
     # search interfeace
     by_class('j-miniTrade').send_keys(name)
-    #sleep(3)
+    sleep(3)
     price = float(by_class('t-price').text)
     by_class('t-trade').click()
-    #sleep(2)
+    sleep(2)
     
     # click sell
     header = by_class('lightbox__header')
@@ -258,7 +258,7 @@ while True:
             else:
                 driver = driver_type()
             
-            driver.implicitly_wait(100)
+            driver.implicitly_wait(30)
             
             by_name = driver.find_element_by_name
             by_class = driver.find_element_by_class_name
@@ -266,9 +266,9 @@ while True:
             
             # MAIN OPERATIONS
             login()
-            buy_stock('AAPL', 10000)
-#            auto_buy()
-#            auto_sell()
+            #buy_stock('AAPL', 10000)
+            auto_buy()
+            auto_sell()
 
             safe_exit()
         else:
