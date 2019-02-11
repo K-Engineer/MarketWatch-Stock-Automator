@@ -29,15 +29,12 @@ def login():
 def buy_stock(name, amount):
     print('buying ' + str(amount) + '$ worth of '+ name)
     driver.get(home)
-    #sleep(5)
     
     # search interfeace
     by_class('j-miniTrade').send_keys(name)
-#    sleep(5)
     price = float(by_class('t-price').text)
     print('the price of ' + name + ' is:' + str(price))
     by_class('t-trade').click()
-#    sleep(15)
 
     # buy interface
     shares = int(amount / price)
@@ -68,7 +65,6 @@ def get_stock_info(name):
 def get_overview_stats():
     print('getting overview stats about my profile')
     driver.get(home)
-#    sleep(5)
 
     info = {}
     
@@ -109,7 +105,7 @@ def get_sp_stock_data():
 def auto_buy():
     print('auto purchasing all stocks that have gone down by ' + str(DROP_WORTH_BUYING) + '%')
     
-    current = get_portfolio_stocks()
+    current = get_portfolio_stocks() # don't want to buy stocks we currently already have
     
     sp = get_sp_stock_data()
     sp.sort(key=lambda x: x[1]['changePercent'])
@@ -119,8 +115,8 @@ def auto_buy():
         
         cash_remaining = get_overview_stats()['cash remaining']
         
-        if change <= DROP_WORTH_BUYING and cash_remaining - AMOUNT_TO_INVEST_PER_PURCHASE >= MINIMUM_CASH:
-            print('buying', name, 'that dropped', change)
+        if change <= DROP_WORTH_BUYING and cash_remaining - AMOUNT_TO_INVEST_PER_PURCHASE >= MINIMUM_CASH and name not in current:
+            print('buying '+ name + ' that dropped ' + str(change*100) + '%')
             buy_stock(name, AMOUNT_TO_INVEST_PER_PURCHASE)
         else:
             print('reached point of stopping auto buy')
@@ -149,7 +145,7 @@ def get_transaction_history():
     return history
 
 def get_portfolio_stocks():
-    print('checking pries of current stocks in portfolio')
+    print('checking prices of current stocks in portfolio')
     driver.get(home + 'portfolio')
     table = by_class('holdings')
     trs = table.find_elements_by_class_name('table__row')[1:] # first table row is headers
@@ -196,14 +192,11 @@ def auto_sell():
 def sell(name, shares):
     print('selling ' + str(shares) + ' of ' + name)
     driver.get(home + 'portfolio')
-#    sleep(3)
 
     # search interfeace
     by_class('j-miniTrade').send_keys(name)
-#    sleep(3)
     price = float(by_class('t-price').text)
     by_class('t-trade').click()
-#    sleep(2)
 
     # click sell
     header = by_class('lightbox__header')
@@ -252,7 +245,7 @@ while True:
             else:
                 driver = driver_type()
             
-            driver.implicitly_wait(30)
+            driver.implicitly_wait(100)
             
             by_name = driver.find_element_by_name
             by_class = driver.find_element_by_class_name
