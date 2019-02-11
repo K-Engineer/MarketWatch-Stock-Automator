@@ -216,12 +216,16 @@ def safe_exit():
     try:
         driver.close()
         driver.quit()
+        print('sucessfully closed driver')
     except Exception:
+        print('error when closing driver')
         pass
         
     try:
         display.stop()
+        print('stopped display')
     except Exception:
+        print('error stopping display')
         pass
 
 def is_market_open():
@@ -264,12 +268,12 @@ while True:
         print('sleeping for ' + str(UPDATE_MIN_DELAY) + ' minutes')
         sleep(UPDATE_MIN_DELAY * 60) # sleep 30 minutes
 
-    except Exception as e:
+    except Exception:
         print("EXCEPTION!!!")
         traceback.print_exc()
         
         f = open("errors.txt", "a")
-        f.write(str(datetime.datetime.now()) + '\n' + str(e) + '\n')
+        f.write(str(datetime.datetime.now()) + '\n' + traceback.format_exc() + '\n')
         f.close()
         
         safe_exit()
