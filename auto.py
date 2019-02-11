@@ -249,9 +249,9 @@ while True:
             
             # MAIN OPERATIONS
             login()
-            buy_stock('AAPL', 10000)
-            #auto_buy()
-            #auto_sell()
+            #buy_stock('AAPL', 10000)
+            auto_buy()
+            auto_sell()
 
             safe_exit()
         else:
