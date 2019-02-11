@@ -56,6 +56,11 @@ def clean(text, num=False):
     else:
         return result
 
+def get_stocks_info(names): # batch request
+    link = 'https://api.iextrading.com/1.0/stock/market/batch?symbols=' + ','.join(names) + '&types=quote'
+    
+    return json.loads(requests.get(link).content)
+
 def get_stock_info(name):
     print('getting stock info for ' + name)
     return json.loads(requests.get('https://api.iextrading.com/1.0/stock/' + name + '/quote').content)
@@ -82,17 +87,23 @@ def get_sp_stock_data():
     # get s&p stock list
     stock_info = []
 
-    i = 1
+    
     f = open('stock_list.txt')
+    
+    names = []
     for line in f:
-        if i % 10 == 0:
-            print(str(i/500.0*100) + '% complete getting stock info')
-        i += 1
-        
-        name = line[:len(line) - 2]
-        stock_info.append((name, get_stock_info(name)))
+        names.append(line[:len(line) - 2]) # remove excess on ending
+    f.close()
+
+    for i in range(5): # need to repeat 5 times because batch size is 100 and there are 500 s&p stocks
+        cur_names = names[100*i:100*(i + 1)]
+        data = get_stocks_info(cur_names)
+
+        for name in cur_names:
+            stock_info.append((name, data[name]['quote']))
 
     print('finished getting all stock info for s&p 500')
+
     return stock_info
 
 def auto_buy():
@@ -249,7 +260,7 @@ while True:
             
             # MAIN OPERATIONS
             login()
-            #buy_stock('AAPL', 10000)
+#            buy_stock(' AAPL', 10000)
             auto_buy()
             auto_sell()
 
