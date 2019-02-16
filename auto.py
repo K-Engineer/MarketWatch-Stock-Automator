@@ -4,6 +4,8 @@ import requests
 import datetime
 import traceback
 from preferences import *
+import os
+import csv
 
 if use_virtual_display:
     from pyvirtualdisplay import Display
@@ -126,23 +128,66 @@ def get_transaction_history():
     print('obtaining transaction history for previously purchased stocks')
     driver.get(home + 'portfolio')
     
-    table = by_class('ranking')
-    trs = table.find_elements_by_class_name('table__row')[1:] # first table row is headers
+    history = {}
     
-    history = []
-    
-    headers = ['name', 'order time', 'transaction time', 'type', 'amount', 'purchase price']
+    headers = ['Symbol', 'order time', 'transaction time', 'type', 'amount', 'price']
     is_num = [False, False, False, False, True, True]
     
-    for row in trs:
-        tds = row.find_elements_by_class_name('table__cell')
-        info = {}
-        for i, td in enumerate(tds):
-            info[headers[i]] = clean(td.text, is_num[i])
+    def get_page():
+        table = by_class('ranking')
+        trs = table.find_elements_by_class_name('table__row')[1:] # first table row is headers
+        
+        for row in trs:
+            tds = row.find_elements_by_class_name('table__cell')
+            info = {}
+            for i, td in enumerate(tds):
+                info[headers[i]] = clean(td.text, is_num[i])
 
-        history.append(info)
+            name = info['Symbol']
+            
+            if name not in history and info['type'] == 'Buy':
+                history[name] = info
+
+    transactions_title = multiple_by_class('title')[5]
+    driver.execute_script("arguments[0].scrollIntoView();", transactions_title)
+    sleep(10)
     
+    while True: # go through every page (table only shows 10 at a time)
+        get_page()
+        next = multiple_by_class('j-next')[1] #.find_element_by_tag_name('i')
+        if next.get_attribute('data-is-disabled') == 'false': # more to go
+            next.click()
+            sleep(3)
+        else:
+            break
+
     return history
+
+#def get_transaction_history_new(): # gets transaction history including only most recent buy for each stock if multiple entries appear
+#    print('getting transaction history')
+#    sleep(5)
+#    driver.get(home + 'download?view=transactions&count=100000')
+#    sleep(5)
+#
+#    address = downloads_folder + 'Portfolio Transactions - ' + market_watch_name + '.csv'
+#
+#    result = {}
+#
+#    with open(address) as csvfile:
+#        reader = csv.DictReader(csvfile)
+#        for row in reader:
+#            name = row['Symbol']
+#
+#            if name not in result and row['Type'] == 'Buy':
+#                row['Price'] = float(row['Price'].replace('$', ''))
+#                result[name] = row
+#
+#    csvfile.close()
+#
+#    # delete the file
+#    os.remove(address)
+#
+#    return result
 
 def get_portfolio_stocks():
     print('checking prices of current stocks in portfolio')
@@ -177,17 +222,15 @@ def auto_sell():
     current = get_portfolio_stocks()
     
     for key in current:
-        for hist in history:
-            if hist['name'] == key:
-                old_price = hist['purchase price']
-                new_price = current[key]['price']
-                
-                change = (new_price - old_price) / old_price
-                
-                if change > RAISE_WORTH_SELLING and key != 'VGSH': # have to keep bond
-                    shares = current[key]['shares']
-                    print('price of ' + key + ' rose by ' + str(change * 100) + '% from ' + str(old_price) + ' to ' + str(new_price) + ' so selling ' + str(shares) + ' shares')
-                    sell(key, shares)
+        old_price = history[key]['price']
+        new_price = current[key]['price']
+        
+        change = (new_price - old_price) / old_price
+        
+        if change > RAISE_WORTH_SELLING and key != 'VGSH': # have to keep bond
+            shares = current[key]['shares']
+            print('price of ' + key + ' rose by ' + str(change * 100) + '% from ' + str(old_price) + ' to ' + str(new_price) + ' so selling ' + str(shares) + ' shares')
+            sell(key, shares)
 
 def sell(name, shares):
     print('selling ' + str(shares) + ' of ' + name)
@@ -234,6 +277,15 @@ def is_market_open():
 
     return 6.5 <= hour + (minute / 60.0) and hour <= 12.5
 
+def download_file_test():
+    print('downloading sample file')
+    driver.get('https://www.marketwatch.com/game/ap-macro-4th-/download?view=transactions&count=100000')
+#    driver.get(home + 'portfolio')
+
+#    items = multiple_by_class('download__data')[2].click()
+    sleep(30)
+#    print(len(items))
+
 while True:
     f = open("runhistory.txt", "w")
     f.write(str(datetime.datetime.now()) + '\n')
@@ -243,12 +295,22 @@ while True:
         if is_market_open() or ignore_if_market_open: # if stock market open
             print('market is open or state ignored by preference, running algorithm')
             
+#            chromeOptions = webdriver.ChromeOptions()
+#            print(downloads_folder)
+#            prefs = {"download.default_directory" : downloads_folder}
+#            chromeOptions.add_experimental_option("prefs",prefs)
+
             # setup driver
             if driver_path != '':
                 driver = driver_type(driver_path)
             else:
                 driver = driver_type()
-            
+        
+#            fp.set_preference("browser.download.folderList",2)
+#            fp.set_preference("browser.download.manager.showWhenStarting",False)
+#            fp.set_preference("browser.download.dir", os.getcwd())
+#            fp.set_preference("browser.helperApps.neverAsk.saveToDisk", "application/octet-stream")
+
             driver.implicitly_wait(100)
             
             by_name = driver.find_element_by_name
@@ -258,6 +320,9 @@ while True:
             # MAIN OPERATIONS
             login()
 #            buy_stock(' AAPL', 10000)
+#            print(get_transaction_history())
+#            print(get_transaction_history_old())
+#            download_file_test()
             auto_buy()
             auto_sell()
 
@@ -277,6 +342,6 @@ while True:
         f.close()
         
         safe_exit()
-        sleep(5)
+        sleep(10)
 
         pass
