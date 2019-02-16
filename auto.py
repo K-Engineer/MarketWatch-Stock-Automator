@@ -342,6 +342,10 @@ while True:
         f.close()
         
         safe_exit()
-        sleep(10)
+        print('waiting after error occurred')
+        sleep(60)
 
         pass
+
+    if reboot_after_run:
+        os.system('sudo reboot now')

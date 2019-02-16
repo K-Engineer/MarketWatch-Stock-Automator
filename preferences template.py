@@ -18,3 +18,5 @@ from selenium import webdriver
 # set driver_path to '' if driver in system PATH
 driver_path = ''
 driver_type = webdriver.Firefox
+
+reboot_after_run = False
